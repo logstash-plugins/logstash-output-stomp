@@ -20,7 +20,7 @@ class LogStash::Outputs::Stomp < LogStash::Outputs::Base
   config :password, :validate => :password, :default => ""
 
   # The destination to read events from. Supports string expansion, meaning
-  # %{foo} values will expand to the field value.
+  # `%{foo}` values will expand to the field value.
   #
   # Example: "/topic/logstash"
   config :destination, :validate => :string, :required => true
