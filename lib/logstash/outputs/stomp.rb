@@ -5,7 +5,6 @@ require "logstash/namespace"
 
 class LogStash::Outputs::Stomp < LogStash::Outputs::Base
   config_name "stomp"
-  milestone 2
 
   # The address of the STOMP server.
   config :host, :validate => :string, :required => true
