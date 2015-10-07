@@ -59,7 +59,7 @@ class LogStash::Outputs::Stomp < LogStash::Outputs::Base
   end # def register
   
   def receive(event)
-      return unless output?(event)
+      
 
       @logger.debug(["stomp sending event", { :host => @host, :event => event }])
       @client.send(event.sprintf(@destination), event.to_json)
