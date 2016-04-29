@@ -27,6 +27,12 @@ class LogStash::Outputs::Stomp < LogStash::Outputs::Base
   # The vhost to use
   config :vhost, :validate => :string, :default => nil
 
+  # Custom headers to send with each message. Supports string expansion, meaning
+  # %{foo} values will expand to the field value.
+  #
+  # Example: headers => ["amq-msg-type", "text", "host", "%{host}"]
+  config :headers, :validate => :hash
+
   # Enable debugging output?
   config :debug, :validate => :boolean, :default => false
 
@@ -59,9 +65,15 @@ class LogStash::Outputs::Stomp < LogStash::Outputs::Base
   end # def register
   
   def receive(event)
-      
 
-      @logger.debug(["stomp sending event", { :host => @host, :event => event }])
-      @client.send(event.sprintf(@destination), event.to_json)
+      headers = Hash.new
+      if @headers
+        @headers.each do |k,v|
+          headers[k] = event.sprintf(v)
+        end
+      end
+
+      @logger.debug(["stomp sending event", { :host => @host, :event => event, :headers => headers }])
+      @client.send(event.sprintf(@destination), event.to_json, headers)
   end # def receive
 end # class LogStash::Outputs::Stomp
