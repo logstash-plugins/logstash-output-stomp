@@ -1,3 +1,5 @@
+# 3.0.0 (2016-05-20)
+  - Breaking: Updated to use new Java APIs
 # 2.0.4
   - Depend on logstash-core-plugin-api instead of logstash-core, removing the need to mass update plugins on major releases of logstash
 # 2.0.3
