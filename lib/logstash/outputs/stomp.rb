@@ -33,9 +33,6 @@ class LogStash::Outputs::Stomp < LogStash::Outputs::Base
   # Example: headers => ["amq-msg-type", "text", "host", "%{host}"]
   config :headers, :validate => :hash
 
-  # Whether to send the messages in batch or one-by-one
-  config :batch, :validate => :boolean, :default => false
-
   # Enable debugging output?
   config :debug, :validate => :boolean, :default => false
 
@@ -82,18 +79,11 @@ class LogStash::Outputs::Stomp < LogStash::Outputs::Base
       end
     end
 
-    if @batch
-      @logger.debug(["stomp sending events in batch", { :host => @host, :events => events.length, :headers => headers }])
+    @logger.debug(["stomp sending events in batch", { :host => @host, :events => events.length, :headers => headers }])
 
-      @client.transaction do |t|
-        events.each { |event|
-          t.send(event.sprintf(@destination), event.to_json, headers)
-        }
-      end
-    else
+    @client.transaction do |t|
       events.each { |event|
-        @logger.debug(["stomp sending event", { :host => @host, :event => event, :headers => headers }])
-        @client.send(event.sprintf(@destination), event.to_json, headers)
+        t.send(event.sprintf(@destination), event.to_json, headers)
       }
     end
   end # def receive
