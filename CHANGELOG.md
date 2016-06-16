@@ -1,3 +1,6 @@
+# 3.0.1
+  - Fix a data loss issue when shutting down logstash #8
+  - Move from receive to `multi_receive` api and send events per batch #9
 # 3.0.0 (2016-05-20)
   - Breaking: Updated to use new Java APIs
 # 2.0.4
