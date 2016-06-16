@@ -68,10 +68,10 @@ class LogStash::Outputs::Stomp < LogStash::Outputs::Base
   end # def register
 
   public
-  def do_close
+  def close
     @logger.warn("Disconnecting from stomp broker")
     @client.disconnect if @client.connected?
-  end # def do_close
+  end # def close
 
   def multi_receive(events)
 
