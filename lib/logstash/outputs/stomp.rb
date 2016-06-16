@@ -33,6 +33,9 @@ class LogStash::Outputs::Stomp < LogStash::Outputs::Base
   # Example: headers => ["amq-msg-type", "text", "host", "%{host}"]
   config :headers, :validate => :hash
 
+  # Whether to send the messages in batch or one-by-one
+  config :batch, :validate => :boolean, :default => false
+
   # Enable debugging output?
   config :debug, :validate => :boolean, :default => false
 
@@ -63,17 +66,35 @@ class LogStash::Outputs::Stomp < LogStash::Outputs::Base
     
     connect
   end # def register
-  
-  def receive(event)
 
-      headers = Hash.new
-      if @headers
-        @headers.each do |k,v|
-          headers[k] = event.sprintf(v)
-        end
+  public
+  def do_close
+    @logger.warn("Disconnecting from stomp broker")
+    @client.disconnect if @client.connected?
+  end # def do_close
+
+  def multi_receive(events)
+
+    headers = Hash.new
+    if @headers
+      @headers.each do |k,v|
+        headers[k] = event.sprintf(v)
       end
+    end
 
-      @logger.debug(["stomp sending event", { :host => @host, :event => event, :headers => headers }])
-      @client.send(event.sprintf(@destination), event.to_json, headers)
+    if @batch
+      @logger.debug(["stomp sending events in batch", { :host => @host, :events => events.length, :headers => headers }])
+
+      @client.transaction do |t|
+        events.each { |event|
+          t.send(event.sprintf(@destination), event.to_json, headers)
+        }
+      end
+    else
+      events.each { |event|
+        @logger.debug(["stomp sending event", { :host => @host, :event => event, :headers => headers }])
+        @client.send(event.sprintf(@destination), event.to_json, headers)
+      }
+    end
   end # def receive
 end # class LogStash::Outputs::Stomp
