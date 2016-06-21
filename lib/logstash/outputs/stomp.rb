@@ -72,17 +72,17 @@ class LogStash::Outputs::Stomp < LogStash::Outputs::Base
 
   def multi_receive(events)
 
-    headers = Hash.new
-    if @headers
-      @headers.each do |k,v|
-        headers[k] = event.sprintf(v)
-      end
-    end
-
-    @logger.debug(["stomp sending events in batch", { :host => @host, :events => events.length, :headers => headers }])
+    @logger.debug(["stomp sending events in batch", { :host => @host, :events => events.length }])
 
     @client.transaction do |t|
       events.each { |event|
+        headers = Hash.new
+        if @headers
+          @headers.each do |k,v|
+            headers[k] = event.sprintf(v)
+          end
+        end
+
         t.send(event.sprintf(@destination), event.to_json, headers)
       }
     end
