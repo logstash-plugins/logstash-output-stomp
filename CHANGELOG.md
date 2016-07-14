@@ -1,3 +1,6 @@
+## 3.0.2
+  - Relax constraint on logstash-core-plugin-api to >= 1.60 <= 2.99
+
 ## 3.0.1
   - Fix a data loss issue when shutting down logstash #8
   - Move from receive to `multi_receive` api and send events per batch #9
