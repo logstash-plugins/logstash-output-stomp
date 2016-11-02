@@ -72,7 +72,7 @@ class LogStash::Outputs::Stomp < LogStash::Outputs::Base
 
   def multi_receive(events)
 
-    @logger.debug(["stomp sending events in batch", { :host => @host, :events => events.length }])
+    @logger.debug("stomp sending events in batch", { :host => @host, :events => events.length })
 
     @client.transaction do |t|
       events.each { |event|
