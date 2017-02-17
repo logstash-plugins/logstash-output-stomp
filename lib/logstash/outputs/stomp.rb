@@ -60,19 +60,27 @@ class LogStash::Outputs::Stomp < LogStash::Outputs::Base
     @client.on_connection_closed {
       connect
     }
-    
+
+    @done = false
     connect
   end # def register
 
   public
   def close
     @logger.warn("Disconnecting from stomp broker")
-    @client.disconnect if @client.connected?
+    Thread.pass until @done
+    @client.disconnect :receipt => 'disconnect-receipt-id' if @client.connected?
   end # def close
 
-  def multi_receive(events)
+  def done(inflight)
+    @done = inflight == 0
+    puts "#{inflight} => @done = #{@done}"
+  end
 
+  def multi_receive(events)
     @logger.debug("stomp sending events in batch", { :host => @host, :events => events.length })
+    inflight = events.length
+    done(inflight)
 
     @client.transaction do |t|
       events.each { |event|
@@ -83,8 +91,11 @@ class LogStash::Outputs::Stomp < LogStash::Outputs::Base
           end
         end
 
-        t.send(event.sprintf(@destination), event.to_json, headers)
+        t.send(event.sprintf(@destination), event.to_json, headers) do |r|
+          inflight -= 1
+          done(inflight)
+        end
       }
     end
-  end # def receive
+  end # def multi_receive
 end # class LogStash::Outputs::Stomp
