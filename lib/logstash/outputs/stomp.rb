@@ -74,7 +74,6 @@ class LogStash::Outputs::Stomp < LogStash::Outputs::Base
 
   def done(inflight)
     @done = inflight == 0
-    puts "#{inflight} => @done = #{@done}"
   end
 
   def multi_receive(events)
