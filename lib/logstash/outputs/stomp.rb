@@ -36,11 +36,14 @@ class LogStash::Outputs::Stomp < LogStash::Outputs::Base
   # Enable debugging output?
   config :debug, :validate => :boolean, :default => false
 
+  # this output is thread-safe
+  concurrency :shared
+
   private
   def connect
     begin
-      @client.connect
-      @logger.debug("Connected to stomp server") if @client.connected?
+      @client = Stomp::Client.new(@user, @password.value, @host, @port)
+      @logger.debug("Connected to stomp server") if @client.open?
     rescue => e
       @logger.debug("Failed to connect to stomp server, will retry",
                     :exception => e, :backtrace => e.backtrace)
@@ -52,49 +55,38 @@ class LogStash::Outputs::Stomp < LogStash::Outputs::Base
 
   public
   def register
-    require "onstomp"
-    @client = OnStomp::Client.new("stomp://#{@host}:#{@port}", :login => @user, :passcode => @password.value)
-    @client.host = @vhost if @vhost
+    require "stomp"
 
-    # Handle disconnects
-    @client.on_connection_closed {
-      connect
-    }
-
-    @done = false
     connect
   end # def register
 
   public
   def close
     @logger.warn("Disconnecting from stomp broker")
-    Thread.pass until @done
-    @client.disconnect :receipt => 'disconnect-receipt-id' if @client.connected?
+    @client.close
   end # def close
 
-  def done(inflight)
-    @done = inflight == 0
-  end
-
   def multi_receive(events)
-    @logger.debug("stomp sending events in batch", { :host => @host, :events => events.length })
-    inflight = events.length
-    done(inflight)
 
-    @client.transaction do |t|
-      events.each { |event|
-        headers = Hash.new
+    tx_name = "tx-#{Random.rand(2**32..2**64-1)}"
+    @logger.debug("sending #{events.length} events in transaction #{tx_name}")
+
+    begin
+      @client.begin tx_name
+      events.each do |event|
+        headers = Hash.new(:transaction => tx_name)
         if @headers
           @headers.each do |k,v|
             headers[k] = event.sprintf(v)
           end
         end
 
-        t.send(event.sprintf(@destination), event.to_json, headers) do |r|
-          inflight -= 1
-          done(inflight)
-        end
-      }
+        @client.publish(event.sprintf(@destination), event.to_json, headers)
+      end
+      @client.commit tx_name
+    rescue Exception => exception
+      @logger.error("Error while sending #{events.length} events in transaction #{tx_name}", :error => exception)
     end
+
   end # def multi_receive
 end # class LogStash::Outputs::Stomp
