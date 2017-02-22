@@ -42,7 +42,7 @@ class LogStash::Outputs::Stomp < LogStash::Outputs::Base
   private
   def connect
     begin
-      @client = Stomp::Client.new(@user, @password.value, @host, @port)
+      @client = Stomp::Client.new(@user, @password.value, @host, @port, :reliable => true)
       @logger.debug("Connected to stomp server") if @client.open?
     rescue => e
       @logger.debug("Failed to connect to stomp server, will retry",
