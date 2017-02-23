@@ -1,5 +1,6 @@
 # encoding: utf-8
 require "logstash/outputs/base"
+require "logstash/outputs/logger"
 require "logstash/namespace"
 
 
@@ -39,15 +40,17 @@ class LogStash::Outputs::Stomp < LogStash::Outputs::Base
   # this output is thread-safe
   concurrency :shared
 
-  private
-  def connect
+  public
+  def register
+    require "stomp"
     begin
       params = { :reliable => true,
-                     :max_reconnect_attempts => 3,
-                     :hosts => [ { :login => @user,
-                                   :passcode => @password.value,
-                                   :host => @host,
-                                   :port => @port } ] }
+                 :max_reconnect_attempts => 3,
+                 :logger => StompLogger.new(@logger),
+                 :hosts => [ { :login => @user,
+                               :passcode => @password.value,
+                               :host => @host,
+                               :port => @port } ] }
       @client = Stomp::Client.new(params)
       @logger.debug("Connected to stomp server") if @client.open?
     rescue => e
@@ -56,14 +59,6 @@ class LogStash::Outputs::Stomp < LogStash::Outputs::Base
       sleep 2
       retry
     end
-  end
-
-
-  public
-  def register
-    require "stomp"
-
-    connect
   end # def register
 
   public
