@@ -1,3 +1,9 @@
+## 3.0.6
+  - Docs: Add plugin description
+
+## 3.0.5
+  - Docs: Bump patch level for doc build
+
 ## 3.0.4
   - A `logger.debug` statement was crashing because of a type mismatch
 
