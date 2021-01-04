@@ -1,6 +1,6 @@
 # Logstash Plugin
 
-[![Travis Build Status](https://travis-ci.org/logstash-plugins/logstash-output-stomp.svg)](https://travis-ci.org/logstash-plugins/logstash-output-stomp)
+[![Travis Build Status](https://travis-ci.com/logstash-plugins/logstash-output-stomp.svg)](https://travis-ci.com/logstash-plugins/logstash-output-stomp)
 
 This is a plugin for [Logstash](https://github.com/elastic/logstash).
 
