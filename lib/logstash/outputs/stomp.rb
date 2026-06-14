@@ -36,6 +36,21 @@ class LogStash::Outputs::Stomp < LogStash::Outputs::Base
   # Enable debugging output?
   config :debug, :validate => :boolean, :default => false
 
+  # Specify a custom X.509 CA (.pem certs), if needed
+  config :cacert, :validate => :path
+
+  # Specify a client certificate , if needed
+  config :client_cert, :validate => :path
+
+  # Specify a client certificate encryption key, if needed
+  config :client_key, :validate => :path
+
+  # Validate TLS/SSL certificate?
+  config :ssl_certificate_validation, :validate => :boolean, :default => true
+
+  # The connection type of your STOMP server.
+  config :protocol, :validate => :string, :default => "stomp"
+
   private
   def connect
     begin
@@ -53,14 +68,23 @@ class LogStash::Outputs::Stomp < LogStash::Outputs::Base
   public
   def register
     require "onstomp"
-    @client = OnStomp::Client.new("stomp://#{@host}:#{@port}", :login => @user, :passcode => @password.value)
+    @ssl_opts = {}
+    @ssl_opts[:ca_file] = @cacert if @cacert
+    @ssl_opts[:cert] = @client_cert if @client_cert
+    @ssl_opts[:key] = @client_key if @client_key
+    # disable verification if false
+    if !@ssl_certificate_validation
+      @ssl_opts[:verify_mode] = OpenSSL::SSL::VERIFY_NONE
+      @ssl_opts[:post_connection_check] = false
+    end
+    @client = OnStomp::Client.new("#{@protocol}://#{@host}:#{@port}", :login => @user, :passcode => @password.value, :ssl => @ssl_opts)
     @client.host = @vhost if @vhost
 
     # Handle disconnects
     @client.on_connection_closed {
       connect
     }
-    
+
     connect
   end # def register
 
